@@ -7,34 +7,45 @@
 #define maxStates 100
 #define maxTerminals 50
 
-typedef struct TreeNode {
+typedef struct TreeNode
+{
     char symbol[50];
     struct TreeNode *children[10];
     int childCount;
 } TreeNode;
 
-TreeNode* createNode(char *symbol) {
-    TreeNode *node = (TreeNode*)malloc(sizeof(TreeNode));
+TreeNode *createNode(char *symbol)
+{
+    TreeNode *node = (TreeNode *)malloc(sizeof(TreeNode));
     strcpy(node->symbol, symbol);
     node->childCount = 0;
-    for(int i=0; i<10; i++) node->children[i] = NULL;
+    for (int i = 0; i < 10; i++)
+        node->children[i] = NULL;
     return node;
 }
 
-void addChild(TreeNode *parent, TreeNode *child) {
-    if (parent->childCount < 10) {
+void addChild(TreeNode *parent, TreeNode *child)
+{
+    if (parent->childCount < 10)
+    {
         parent->children[parent->childCount++] = child;
     }
 }
 
-void printTree(TreeNode *root, int level) {
-    if (root == NULL) return;
-    for (int i = 0; i < level; i++) {
-        if (i == level - 1) printf("|-- ");
-        else printf("|   ");
+void printTree(TreeNode *root, int level)
+{
+    if (root == NULL)
+        return;
+    for (int i = 0; i < level; i++)
+    {
+        if (i == level - 1)
+            printf("|-- ");
+        else
+            printf("|   ");
     }
     printf("%s\n", root->symbol);
-    for (int i = 0; i < root->childCount; i++) {
+    for (int i = 0; i < root->childCount; i++)
+    {
         printTree(root->children[i], level + 1);
     }
 }
@@ -59,7 +70,8 @@ SetNode *firstSets[maxStates];
 SetNode *followSets[maxStates];
 char analyseTable[maxStates][maxTerminals][200];
 
-typedef struct StackItem {
+typedef struct StackItem
+{
     char symbol[20];
     TreeNode *node;
 } StackItem;
@@ -82,7 +94,8 @@ void pop()
 
 StackItem peekItem()
 {
-    if (top == -1) {
+    if (top == -1)
+    {
         StackItem empty = {"", NULL};
         return empty;
     }
@@ -331,6 +344,25 @@ int getTerminalIndex(char *t)
     return -1;
 }
 
+bool ruleAlreadyInCell(char *cell, char *rule)
+{
+    char cellCopy[200];
+    strcpy(cellCopy, cell);
+    char *entry = strtok(cellCopy, "|");
+    while (entry != NULL)
+    {
+        while (*entry == ' ')
+            entry++;
+        int len = strlen(entry);
+        while (len > 0 && entry[len - 1] == ' ')
+            entry[--len] = '\0';
+        if (strcmp(entry, rule) == 0)
+            return true;
+        entry = strtok(NULL, "|");
+    }
+    return false;
+}
+
 void addToTable(int state, int col, char *rule)
 {
     if (col == -1)
@@ -342,7 +374,7 @@ void addToTable(int state, int col, char *rule)
     }
     else
     {
-        if (strstr(analyseTable[state][col], rule) == NULL)
+        if (!ruleAlreadyInCell(analyseTable[state][col], rule))
         {
             strcat(analyseTable[state][col], " | ");
             strcat(analyseTable[state][col], rule);
@@ -408,8 +440,8 @@ void analyze()
             if (allNullable)
                 addToSet(&firstAlpha, "ep");
 
-            char ruleString[60];
-            sprintf(ruleString, "%d->%s", i, t->body);
+            char ruleString[120];
+            snprintf(ruleString, sizeof(ruleString), "%d->%s", i, t->body);
 
             SetNode *current = firstAlpha;
             while (current != NULL)
@@ -436,16 +468,15 @@ void analyze()
 
 void Analye()
 {
-    int c;
-
     char inputBuffer[200];
     printf("\nEnter the string to be analyzed: ");
     fflush(stdout);
-    if (fgets(inputBuffer, sizeof(inputBuffer), stdin) == NULL) return;
+    if (fgets(inputBuffer, sizeof(inputBuffer), stdin) == NULL)
+        return;
     inputBuffer[strcspn(inputBuffer, "\n")] = 0;
 
     char startSymbol[10];
-    sprintf(startSymbol, "%d", 0); 
+    sprintf(startSymbol, "%d", 0);
     TreeNode *rootNode = createNode(startSymbol);
 
     top = -1;
@@ -464,7 +495,7 @@ void Analye()
 
     while (1)
     {
-        printStack(stackStr); 
+        printStack(stackStr);
         char *remainingInput = inputBuffer + inputPos;
         StackItem item = peekItem();
         char *X = item.symbol;
@@ -472,7 +503,8 @@ void Analye()
 
         int tempPos = inputPos;
         int tokenType = getNextToken(inputBuffer, &tempPos, currentToken);
-        if (tokenType == 0) strcpy(currentToken, "$");
+        if (tokenType == 0)
+            strcpy(currentToken, "$");
 
         if (strcmp(X, "$") == 0 && strcmp(currentToken, "$") == 0)
         {
@@ -499,7 +531,8 @@ void Analye()
                 return;
             }
 
-            if (strcmp(currentToken, "$") == 0) termIndex = getTerminalIndex("$");
+            if (strcmp(currentToken, "$") == 0)
+                termIndex = getTerminalIndex("$");
 
             if (termIndex == -1 || analyseTable[stateIndex][termIndex][0] == '\0')
             {
@@ -510,55 +543,68 @@ void Analye()
             char *rule = analyseTable[stateIndex][termIndex];
             char ruleCopy[100];
             strcpy(ruleCopy, rule);
-            
+
             char *bodyStart = strstr(ruleCopy, "->");
-            if (bodyStart) bodyStart += 2; else bodyStart = ruleCopy;
+            if (bodyStart)
+                bodyStart += 2;
+            else
+                bodyStart = ruleCopy;
 
             char bodyTokens[20][20];
             int count = 0;
             int bPos = 0;
             char bTok[50];
 
-            while(1) {
+            while (1)
+            {
                 int type = getNextToken(bodyStart, &bPos, bTok);
-                if (type == 0) break;
+                if (type == 0)
+                    break;
                 strcpy(bodyTokens[count++], bTok);
             }
 
             strcpy(action, "POP");
-            if (count == 1 && strcmp(bodyTokens[0], "ep") == 0) {
-                 strcat(action, ", PUSH ep");
-                 TreeNode *epNode = createNode("ep");
-                 addChild(currentNode, epNode);
-            } else {
-                 if (count > 0) strcat(action, ", PUSH");
-                 for (int i = 0; i < count; i++) {
-                     strcat(action, " ");
-                     strcat(action, bodyTokens[i]);
-                 }
-                 
-                 TreeNode *childrenNodes[20];
-                 for(int i=0; i<count; i++) {
-                     childrenNodes[i] = createNode(bodyTokens[i]);
-                     addChild(currentNode, childrenNodes[i]);
-                 }
-                 
-                 printf("| %-20s | %-20s | %-20s |\n", stackStr, remainingInput, action);
-                 pop();
+            if (count == 1 && strcmp(bodyTokens[0], "ep") == 0)
+            {
+                strcat(action, ", PUSH ep");
+                TreeNode *epNode = createNode("ep");
+                addChild(currentNode, epNode);
+            }
+            else
+            {
+                if (count > 0)
+                    strcat(action, ", PUSH");
+                for (int i = 0; i < count; i++)
+                {
+                    strcat(action, " ");
+                    strcat(action, bodyTokens[i]);
+                }
 
-                 for (int i = count - 1; i >= 0; i--) {
-                     push(bodyTokens[i], childrenNodes[i]);
-                 }
-                 continue;
+                TreeNode *childrenNodes[20];
+                for (int i = 0; i < count; i++)
+                {
+                    childrenNodes[i] = createNode(bodyTokens[i]);
+                    addChild(currentNode, childrenNodes[i]);
+                }
+
+                printf("| %-20s | %-20s | %-20s |\n", stackStr, remainingInput, action);
+                pop();
+
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    push(bodyTokens[i], childrenNodes[i]);
+                }
+                continue;
             }
 
             printf("| %-20s | %-20s | %-20s |\n", stackStr, remainingInput, action);
-            pop(); 
+            pop();
         }
     }
     printf("----------------------------------------------------------------------\n");
 
-    if (accepted) {
+    if (accepted)
+    {
         printf("\nSyntax Tree:\n");
         printTree(rootNode, 0);
         printf("\n");
@@ -676,7 +722,6 @@ int main()
         }
     }
 
-    fgets(line, sizeof(line), f);
     while (fgets(line, sizeof(line), f))
     {
         char *arrow = strstr(line, "->");
