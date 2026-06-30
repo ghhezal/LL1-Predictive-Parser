@@ -1,0 +1,15 @@
+# Compiled binaries
+*.o
+*.out
+*.exe
+L1-Predictive-Parser
+parser
+a.out
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+*.swp
